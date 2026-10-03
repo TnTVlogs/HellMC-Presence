@@ -53,6 +53,8 @@ public final class Presence {
             LOG.log(Level.WARNING, "Could not read " + configFile + ": " + e.getMessage());
             return;
         }
+        // Títol de la finestra: no depèn de Discord ni del clientId.
+        WindowTitle.start(config.windowTitle);
         if (!config.valid()) {
             LOG.warning("clientId missing in " + configFile + "; presence disabled.");
             return;

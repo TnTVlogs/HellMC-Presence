@@ -50,6 +50,20 @@ No dependencies: the IPC protocol (handshake + `SET_ACTIVITY`) and the JSON hand
 
 The directory can be overridden with `-Dhellmc.presence.dir=<path>` (defaults to the working directory).
 
+## Window title
+
+The game window is renamed from `Minecraft* 26.1.2 - Singleplayer` to **`HellMC Client 26.1.2 - Singleplayer`**. The
+dynamic part (singleplayer / multiplayer / LAN, already translated to the player's language) is **not rebuilt by
+the mod**: it asks Minecraft for its own title (`createTitle()`) and only replaces the leading word, so it always matches
+what vanilla would show.
+
+This is the only part that touches Minecraft, by **reflection** with Mojang names (`Minecraft.getInstance()`,
+`getWindow()`, `Window.setTitle`, `execute`): they are the real names on the unobfuscated versions (**26.x**; checked
+against the 26.1.2 client). On older versions the loader obfuscates names at runtime, so they are not found and the title is
+simply left as is (Discord presence does not depend on it). The title is re-applied every 500 ms on the game's main thread
+(`Minecraft.execute`), because the game rewrites it on world changes. The text can be changed with `"windowTitle"` in
+`hellmc-presence.json` (default `HellMC Client`).
+
 ## Build
 
 ```bash

@@ -23,6 +23,8 @@ final class Config {
     final String largeImageText;
     final String smallImageKey;
     final String smallImageText;
+    /** Nom de la finestra del joc («HellMC Client»); si el launcher no l'envia, es fa servir aquest valor per defecte. */
+    final String windowTitle;
     final long startTimestampMs;
     private final Map<String, String> texts;
 
@@ -35,6 +37,8 @@ final class Config {
         this.largeImageText = str(m, "largeImageText");
         this.smallImageKey = str(m, "smallImageKey");
         this.smallImageText = str(m, "smallImageText");
+        String title = str(m, "windowTitle");
+        this.windowTitle = title != null ? title : "HellMC Client";
         Object ts = m.get("startTimestamp");
         this.startTimestampMs = ts instanceof Number n ? n.longValue() : System.currentTimeMillis();
         Map<String, String> t = new java.util.HashMap<>();
