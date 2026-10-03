@@ -1,0 +1,13 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/TnTVlogs/HellMC-Presence/issues"
+
+[[mods]]
+modId = "hellmc_presence"
+version = "${version}"
+displayName = "HellMC Presence"
+authors = "TnTVlogs"
+description = '''
+Discord Rich Presence for HellMC Client (menu / singleplayer / server). Does nothing outside HellMC.
+'''

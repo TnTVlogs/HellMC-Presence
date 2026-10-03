@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "hellmc_presence",
+  "version": "${version}",
+  "name": "HellMC Presence",
+  "description": "Discord Rich Presence for HellMC Client (menu / singleplayer / server). Does nothing outside HellMC.",
+  "authors": ["TnTVlogs"],
+  "contact": { "homepage": "https://hellmcclient.sergidalmau.dev" },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["net.hellmc.presence.FabricEntry"]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0"
+  }
+}

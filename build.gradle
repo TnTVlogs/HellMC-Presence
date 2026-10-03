@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+}
+
+group = 'net.hellmc'
+version = project.property('modVersion')
+
+repositories {
+    mavenCentral()
+}
+
+// Els «stubs» (anotació @Mod de Forge/NeoForge i ModInitializer de Fabric) només existeixen per
+// compilar: el loader real els posa en temps d'execució. Mai van dins el jar.
+sourceSets {
+    stubs
+    main {
+        compileClasspath += stubs.output
+    }
+}
+
+java {
+    // Bytecode de Java 17: el mateix jar funciona des de MC 1.18 (Java 17) fins a 26.x (Java 25).
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation sourceSets.stubs.output
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+        expand(version: project.version)
+    }
+}
+
+jar {
+    archiveBaseName = 'hellmc-presence'
+    // Jar universal: Fabric/Quilt (fabric.mod.json), Forge (mods.toml) i NeoForge (neoforge.mods.toml).
+    manifest {
+        attributes(
+            'Implementation-Title': 'HellMC Presence',
+            'Implementation-Version': project.version,
+            'Automatic-Module-Name': 'net.hellmc.presence'
+        )
+    }
+    from('LICENSE')
+}
+
+test {
+    useJUnitPlatform()
+}
