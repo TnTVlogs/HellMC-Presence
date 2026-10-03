@@ -3,8 +3,8 @@
 Discord Rich Presence **inside the game** for [HellMC Client](https://github.com/TnTVlogs/HellMC-Client).
 
 One **universal jar** for **Fabric / Quilt, Forge and NeoForge**, every Minecraft version from 1.18 up to 26.x
-(Java 17+ bytecode). It touches **no Minecraft API** — only the loader entrypoint — so it does not need one build
-per loader × Minecraft version.
+(Java 17+ bytecode). It touches **no Minecraft API by name** — only the loader entrypoint and the game's main-thread `Executor` — so it does not
+need one build per loader × Minecraft version.
 
 ## Why a mod
 
@@ -50,26 +50,30 @@ No dependencies: the IPC protocol (handshake + `SET_ACTIVITY`) and the JSON hand
 
 The directory can be overridden with `-Dhellmc.presence.dir=<path>` (defaults to the working directory).
 
-## Window title
+## Window title and icon
 
-The game window is renamed from `Minecraft* 26.1.2 - Singleplayer` to **`HellMC Client 26.1.2 - Singleplayer`**. The
-dynamic part (singleplayer / multiplayer / LAN, already translated to the player's language) is **not rebuilt by
-the mod**: it asks Minecraft for its own title (`createTitle()`) and only replaces the leading word, so it always matches
-what vanilla would show.
+The game window is renamed to **`HellMC Client 1.20.1`** (Minecraft version of the instance), with the usual mode suffix
+(`- Singleplayer`, `- Multiplayer (3rd-party Server)`, translated to the player's language), and gets the HellMC flame as its
+icon. The `*` vanilla puts after "Minecraft" for modded games is not shown.
 
-This is the only part that touches Minecraft, by **reflection** with Mojang names (`Minecraft.getInstance()`,
-`getWindow()`, `Window.setTitle`, `execute`): they are the real names on the unobfuscated versions (**26.x**; checked
-against the 26.1.2 client). On older versions the loader obfuscates names at runtime, so they are not found and the title is
-simply left as is (Discord presence does not depend on it). The title is re-applied every 500 ms on the game's main thread
-(`Minecraft.execute`), because the game rewrites it on world changes. The text can be changed with `"windowTitle"` in
-`hellmc-presence.json` (default `HellMC Client`).
+It works on **every version and loader** with the single jar, because it uses **no Minecraft method by name** (those are
+obfuscated and change per loader/version). It only needs:
 
-### Window icon
+1. the main game class — `net.minecraft.client.Minecraft` (official names: Forge, NeoForge, 26.x) or
+   `net.minecraft.class_310` (Fabric/Quilt) — and its only static, no-argument method that returns that class (found by
+   *signature*, whatever it is called);
+2. that the class implements `java.util.concurrent.Executor`: `execute(Runnable)` queues work on the game's **main thread**,
+   where GLFW's current context is the game window.
 
-The same code also sets the HellMC flame as the window icon (`glfwSetWindowIcon`, LWJGL classes come from the game itself —
-`compileOnly`, not packaged). PNGs in six sizes (16–256) live in `src/main/resources/hellmc-icon-*.png`. It is applied on the
-first pass and again a few seconds later, because the game sets its own icon while starting. Not done on macOS (no
-per-window icon there: the Dock icon is the app's). Same limits as the title: only where the Mojang names exist (26.x).
+From there the title and the icon are set with LWJGL's GLFW (`glfwSetWindowTitle`, `glfwSetWindowIcon`; the classes come
+from the game itself — `compileOnly`, not packaged). Verified against the real 26.1.2 client and the intermediary-remapped
+1.21.11 Fabric client. The suffix is **not read from the game**: it follows the same log-based state as the Discord
+presence (menu / singleplayer / server) with texts sent by the launcher (`titleSingleplayer`, `titleMultiplayer`, and
+`minecraftVersion` / `windowTitle` in `hellmc-presence.json`). The title is re-applied every 500 ms (the game rewrites its own
+when the world changes); the icon on the first pass and again a few seconds later (the game sets its own while starting). On
+macOS the icon is skipped (the Dock icon is the app's). It does not depend on Discord: `clientId` may be missing.
+
+PNGs in six sizes (16–256) live in `src/main/resources/hellmc-icon-*.png`.
 
 ## Build
 

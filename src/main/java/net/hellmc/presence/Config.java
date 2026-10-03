@@ -25,6 +25,8 @@ final class Config {
     final String smallImageText;
     /** Nom de la finestra del joc («HellMC Client»); si el launcher no l'envia, es fa servir aquest valor per defecte. */
     final String windowTitle;
+    /** Versió de Minecraft de la instància («1.20.1», «26.1.2»…), per al títol de la finestra. */
+    final String minecraftVersion;
     final long startTimestampMs;
     private final Map<String, String> texts;
 
@@ -37,6 +39,7 @@ final class Config {
         this.largeImageText = str(m, "largeImageText");
         this.smallImageKey = str(m, "smallImageKey");
         this.smallImageText = str(m, "smallImageText");
+        this.minecraftVersion = str(m, "minecraftVersion");
         String title = str(m, "windowTitle");
         this.windowTitle = title != null ? title : "HellMC Client";
         Object ts = m.get("startTimestamp");

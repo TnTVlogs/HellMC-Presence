@@ -54,7 +54,7 @@ public final class Presence {
             return;
         }
         // Títol de la finestra: no depèn de Discord ni del clientId.
-        WindowTitle.start(config.windowTitle);
+        WindowTitle.start(gameDir, config);
         if (!config.valid()) {
             LOG.warning("clientId missing in " + configFile + "; presence disabled.");
             return;
