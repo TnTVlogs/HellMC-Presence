@@ -52,6 +52,7 @@ final class WindowTitle {
         Method execute;
         Method createTitle;
         Method setTitle;
+        Method handle;
         try {
             ClassLoader loader = Presence.class.getClassLoader();
             minecraft = Class.forName("net.minecraft.client.Minecraft", false, loader);
@@ -61,6 +62,7 @@ final class WindowTitle {
             createTitle = minecraft.getDeclaredMethod("createTitle");
             createTitle.setAccessible(true);
             setTitle = getWindow.getReturnType().getMethod("setTitle", String.class);
+            handle = findHandleMethod(getWindow.getReturnType());
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             LOG.info("Window title not customised on this Minecraft version (" + e.getClass().getSimpleName() + ").");
             return;
@@ -69,12 +71,17 @@ final class WindowTitle {
         final Method createTitleF = createTitle;
         final Method getWindowF = getWindow;
         final Method setTitleF = setTitle;
+        final Method handleF = handle;
+        int tick = 0;
         boolean logged = false;
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Object mc = getInstance.invoke(null);
                 if (mc != null) {
-                    execute.invoke(mc, (Runnable) () -> apply(mc, brand, createTitleF, getWindowF, setTitleF));
+                    // La icona es posa a la primera passada i es repeteix una mica després (el joc posa la seva en arrencar).
+                    final boolean icon = tick == 0 || tick == 10 || tick == 40;
+                    execute.invoke(mc, (Runnable) () -> apply(mc, brand, createTitleF, getWindowF, setTitleF, icon ? handleF : null));
+                    tick++;
                     if (!logged) {
                         logged = true;
                         LOG.info("Window title customised (\"" + brand + "\").");
@@ -91,13 +98,35 @@ final class WindowTitle {
         }
     }
 
+    /** Mètode del `Window` que torna el punter GLFW: `handle()` (26.x) o `getWindow()` (versions anteriors, noms de Mojang). */
+    private static Method findHandleMethod(Class<?> window) {
+        for (String name : new String[] {"handle", "getWindow"}) {
+            try {
+                Method m = window.getMethod(name);
+                if (m.getReturnType() == long.class) return m;
+            } catch (NoSuchMethodException ignored) {
+                // es prova el següent
+            }
+        }
+        return null;
+    }
+
+    private static void setIcon(long handle) {
+        try {
+            WindowIcon.apply(handle);
+        } catch (RuntimeException | LinkageError e) {
+            LOG.log(Level.FINE, "Window icon not set", e);
+        }
+    }
+
     /** S'executa al fil principal del joc. */
-    private static void apply(Object mc, String brand, Method createTitle, Method getWindow, Method setTitle) {
+    private static void apply(Object mc, String brand, Method createTitle, Method getWindow, Method setTitle, Method handle) {
         try {
             Object window = getWindow.invoke(mc);
             if (window == null) return;
             String branded = rebrand((String) createTitle.invoke(mc), brand);
             if (branded != null) setTitle.invoke(window, branded);
+            if (handle != null) setIcon((long) handle.invoke(window));
         } catch (InvocationTargetException | IllegalAccessException | RuntimeException e) {
             LOG.log(Level.FINE, "Window title update failed", e);
         }

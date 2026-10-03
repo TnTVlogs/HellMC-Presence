@@ -30,6 +30,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
+    // LWJGL el posa el joc en temps d'execució; aquí només cal per compilar la icona de la finestra (no va dins el jar).
+    compileOnly 'org.lwjgl:lwjgl:3.3.3'
+    compileOnly 'org.lwjgl:lwjgl-glfw:3.3.3'
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

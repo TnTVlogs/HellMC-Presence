@@ -64,6 +64,13 @@ simply left as is (Discord presence does not depend on it). The title is re-appl
 (`Minecraft.execute`), because the game rewrites it on world changes. The text can be changed with `"windowTitle"` in
 `hellmc-presence.json` (default `HellMC Client`).
 
+### Window icon
+
+The same code also sets the HellMC flame as the window icon (`glfwSetWindowIcon`, LWJGL classes come from the game itself —
+`compileOnly`, not packaged). PNGs in six sizes (16–256) live in `src/main/resources/hellmc-icon-*.png`. It is applied on the
+first pass and again a few seconds later, because the game sets its own icon while starting. Not done on macOS (no
+per-window icon there: the Dock icon is the app's). Same limits as the title: only where the Mojang names exist (26.x).
+
 ## Build
 
 ```bash
