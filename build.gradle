@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.gradleup.shadow' version '9.2.2'
 }
 
 group = 'net.hellmc'
@@ -30,6 +31,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
+    // ASM només l'usa l'agent (`net.hellmc.presence.agent`) per reescriure GLFW; va dins el jar **reubicat**
+    // (vegeu `shadowJar`) perquè no xoqui amb l'ASM de Fabric/Forge/Mixin.
+    implementation 'org.ow2.asm:asm:9.7.1'
     // LWJGL el posa el joc en temps d'execució; aquí només cal per compilar la icona de la finestra (no va dins el jar).
     compileOnly 'org.lwjgl:lwjgl:3.3.3'
     compileOnly 'org.lwjgl:lwjgl-glfw:3.3.3'
@@ -37,6 +41,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation sourceSets.stubs.output
+    // El test de l'agent verifica el bytecode de la classe GLFW real, reescrita.
+    testImplementation 'org.lwjgl:lwjgl:3.3.3'
+    testImplementation 'org.lwjgl:lwjgl-glfw:3.3.3'
+    testImplementation 'org.ow2.asm:asm-util:9.7.1'
 }
 
 processResources {
@@ -47,16 +55,32 @@ processResources {
 }
 
 jar {
-    archiveBaseName = 'hellmc-presence'
-    // Jar universal: Fabric/Quilt (fabric.mod.json), Forge (mods.toml) i NeoForge (neoforge.mods.toml).
+    // El jar «de veritat» és el de `shadowJar` (porta ASM reubicat); aquest queda com a intermedi.
+    archiveClassifier = 'plain'
     manifest {
         attributes(
             'Implementation-Title': 'HellMC Presence',
             'Implementation-Version': project.version,
-            'Automatic-Module-Name': 'net.hellmc.presence'
+            'Automatic-Module-Name': 'net.hellmc.presence',
+            // Jar universal i, alhora, Java agent: el launcher l'afegeix amb `-javaagent:` perquè el títol i la icona de la
+            // finestra es posin des del primer instant (vegeu README, «Agent»). Els loaders ignoren aquest atribut.
+            'Premain-Class': 'net.hellmc.presence.agent.Agent'
         )
     }
     from('LICENSE')
+}
+
+shadowJar {
+    archiveBaseName = 'hellmc-presence'
+    archiveClassifier = ''
+    // Jar universal: Fabric/Quilt (fabric.mod.json), Forge (mods.toml) i NeoForge (neoforge.mods.toml).
+    relocate 'org.objectweb.asm', 'net.hellmc.presence.agent.asm'
+    // Res de metadades d'ASM dins el jar (no és un mod ni té mòduls).
+    exclude 'module-info.class', 'META-INF/versions/**/module-info.class', 'META-INF/LICENSE*', 'META-INF/NOTICE*'
+}
+
+tasks.named('assemble') {
+    dependsOn tasks.shadowJar
 }
 
 test {

@@ -70,6 +70,12 @@ final class WindowTitle {
         AtomicInteger applied = new AtomicInteger();
         boolean logged = false;
         while (!Thread.currentThread().isInterrupted()) {
+            // Amb l'agent (`-javaagent`, vegeu `net.hellmc.presence.agent`) el títol i la icona ja es posen a GLFW mateix,
+            // abans que arribin a la finestra: no cal (ni convé) pelejar-hi des d'aquí.
+            if (agentActive()) {
+                LOG.info("Window title/icon handled by the HellMC agent.");
+                return;
+            }
             for (String line : tailer.poll()) state.onLine(line);
             try {
                 Object mc = getInstance.invoke(null);
@@ -99,6 +105,11 @@ final class WindowTitle {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /** L'agent posa aquesta propietat només quan ha reescrit tots els mètodes de GLFW (vegeu {@code GlfwTransformer}). */
+    static boolean agentActive() {
+        return System.getProperty("hellmc.presence.agent") != null;
     }
 
     private static Class<?> findMinecraftClass() {

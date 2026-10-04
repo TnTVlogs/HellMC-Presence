@@ -56,6 +56,28 @@ The game window is renamed to **`HellMC Client 1.20.1`** (Minecraft version of t
 (`- Singleplayer`, `- Multiplayer (3rd-party Server)`, translated to the player's language), and gets the HellMC flame as its
 icon. The `*` vanilla puts after "Minecraft" for modded games is not shown.
 
+### Agent (no "Minecraft" flash, ever)
+
+The same jar is also a **Java agent**. The launcher adds `-javaagent:<hellmc-presence.jar>` to the game's JVM arguments
+(`processbuilder.js`, `_presenceAgentArg`), and before the game starts the agent rewrites LWJGL's `org.lwjgl.glfw.GLFW`
+as it loads (`agent/GlfwTransformer`, ASM relocated inside the jar so it cannot clash with Fabric's/Forge's ASM):
+
+| GLFW method | What the agent does |
+|---|---|
+| `glfwCreateWindow(…, title, …)` | the window is **born** as `HellMC Client …` |
+| `glfwSetWindowTitle(window, title)` | `Minecraft* 1.20.1 - Singleplayer` → `HellMC Client 1.20.1 - Singleplayer` (only the leading `Minecraft*` changes, so the mode text keeps the game's own translation) |
+| `glfwSetWindowIcon(window, images)` | whatever icon the game asks for is replaced by the HellMC flame |
+
+Every way the game has of writing the title or the icon goes through those methods, on every loader and version, so the
+game's own title/icon never reaches the window — not at startup and not when joining/leaving a world. Names are the
+LWJGL ones (stable), not Minecraft's (obfuscated and different per loader/version), hence one jar for everything.
+`agent/hook/Hook` is the code those methods call; it is the only part copied to the bootstrap classpath (a temp jar), and it
+does nothing without `hellmc-presence.json` (so it is harmless without the launcher). If the agent is not attached, or
+LWJGL doesn't have the expected methods, the mod falls back to the polling described below (title/icon applied with a small
+delay).
+
+### Fallback (without the agent)
+
 It works on **every version and loader** with the single jar, because it uses **no Minecraft method by name** (those are
 obfuscated and change per loader/version). It only needs:
 
@@ -79,7 +101,8 @@ PNGs in six sizes (16–256) live in `src/main/resources/hellmc-icon-*.png`.
 
 ```bash
 gradle build        # needs Java 17+ and Gradle 8.5+ (tested with Gradle 9.2 / Java 25)
-# → build/libs/hellmc-presence-<version>.jar
+# → build/libs/hellmc-presence-<version>.jar        (the one to deploy; ASM relocated inside)
+#   build/libs/hellmc-presence-<version>-plain.jar  (intermediate, without ASM: do not use)
 ```
 
 The jar contains `fabric.mod.json`, `META-INF/mods.toml` (Forge, NeoForge ≤ 1.20.4) and
