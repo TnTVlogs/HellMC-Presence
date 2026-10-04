@@ -113,7 +113,7 @@ Tests: `gradle test` (JSON, state machine, IPC framing/handshake against a fake 
 
 ## Deploy
 
-Put the built jar somewhere on the panel server and point `PRESENCE_JAR` (panel `backend/.env`) at it. On every
+Put the built jar somewhere on the panel server and point `PRESENCE_DIR` (panel `backend/.env`) at it. On every
 publish the panel copies it into the `required/` mods folder of **all** versions, so Nebula emits it as a mandatory
 module. The client hides it from the mods list (it is infrastructure, not a player option).
 
